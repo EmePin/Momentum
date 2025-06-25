@@ -69,7 +69,7 @@ export default function SettingsScreen() {
       
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: '🍅 Pomokids Reminder',
+          title: '🍅 Timer Reminder',
           body: 'Time for your focus session! Let\'s get productive!',
           sound: true,
         },
@@ -192,7 +192,7 @@ export default function SettingsScreen() {
     >
       <View style={styles.header}>
         <Text style={styles.title}>Settings</Text>
-        <Text style={styles.subtitle}>Customize your Pomokids experience</Text>
+        <Text style={styles.subtitle}>Customize your Timer experience</Text>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -386,7 +386,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Pomokids v1.0.0</Text>
+          <Text style={styles.footerText}>Timer v1.0.0</Text>
           <Text style={styles.footerSubtext}>Made with ❤️ for productivity</Text>
         </View>
       </ScrollView>

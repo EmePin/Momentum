@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router';
 import { Timer, Plus, Settings } from 'lucide-react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet,Platform } from 'react-native';
+
 
 export default function TabLayout() {
   return (
@@ -10,7 +11,7 @@ export default function TabLayout() {
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: '#FF6B35',
         tabBarInactiveTintColor: '#94A3B8',
-        tabBarLabelStyle: styles.tabLabel,
+      
       }}>
       <Tabs.Screen
         name="index"
@@ -45,22 +46,16 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#201e2b',
     borderTopWidth: 0,
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    height: 90,
-    paddingBottom: 25,
-    paddingHorizontal: 20,
+    elevation: 0,
+    shadowOpacity: 0,
+    height: Platform.OS === 'ios' ? 90 : 70,
+    paddingBottom: Platform.OS === 'ios' ? 25 : 10,
+    paddingTop: 10,
   },
   tabLabel: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: 'Inter-Medium',
     fontSize: 12,
     marginTop: 4,
   },

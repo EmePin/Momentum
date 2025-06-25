@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 
 interface TimerContextType {
   currentTimer: CustomTimer | null;
   setCurrentTimer: (timer: CustomTimer | null) => void;
   timerState: TimerState;
   setTimerState: React.Dispatch<React.SetStateAction<TimerState>>;
-  playSound: (soundType: 'pip' | 'pipi' | 'complete') => Promise<void>;
+  playSound: (soundType: 'pip' | 'pipi' | 'complete') => void;
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
 }
@@ -67,6 +67,11 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     totalCycles: 4,
   });
 
+  // Player refs para cada sonido
+  const pipPlayer = useAudioPlayer({ uri: 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg' });
+  const pipiPlayer = useAudioPlayer({ uri: 'https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg' });
+  const completePlayer = useAudioPlayer({ uri: 'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg' });
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -93,34 +98,22 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const playSound = async (soundType: 'pip' | 'pipi' | 'complete') => {
+  const playSound = (soundType: 'pip' | 'pipi' | 'complete') => {
     if (!settings.soundEnabled) return;
-    
-    try {
-      let soundUri = '';
-      
-      switch (soundType) {
-        case 'pip':
-          soundUri = 'https://actions.google.com/sounds/v1/alarms/beep_short.ogg';
-          break;
-        case 'pipi':
-          soundUri = 'https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg';
-          break;
-        case 'complete':
-          soundUri = 'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg';
-          break;
-      }
 
-      const { sound } = await Audio.Sound.createAsync({ uri: soundUri });
-      await sound.playAsync();
-      
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          sound.unloadAsync();
-        }
-      });
-    } catch (error) {
-      console.log('Error playing sound:', error);
+    switch (soundType) {
+      case 'pip':
+        pipPlayer.seekTo(0);
+        pipPlayer.play();
+        break;
+      case 'pipi':
+        pipiPlayer.seekTo(0);
+        pipiPlayer.play();
+        break;
+      case 'complete':
+        completePlayer.seekTo(0);
+        completePlayer.play();
+        break;
     }
   };
 

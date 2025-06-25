@@ -181,7 +181,7 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <Text style={styles.title}>
-          {currentTimer ? currentTimer.name : 'Pomokids'}
+          {currentTimer ? currentTimer.name : 'Timer'}
         </Text>
         <Text style={styles.subtitle}>
           {timerState.isBreak ? `${currentTimer?.emoji || '🌸'} Break Time` : `${currentTimer?.emoji || '🍅'} Focus Time`}
