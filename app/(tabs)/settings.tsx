@@ -24,23 +24,15 @@ import {
   Smartphone
 } from 'lucide-react-native';
 import { useTimer } from '@/components/TimerProvider';
-import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useTimer();
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [reminderTime, setReminderTime] = useState(new Date());
 
-  useEffect(() => {
-    // Parse the reminder time string to Date object
-    const [hours, minutes] = settings.reminderTime.split(':');
-    const date = new Date();
-    date.setHours(parseInt(hours, 10));
-    date.setMinutes(parseInt(minutes, 10));
-    setReminderTime(date);
-  }, [settings.reminderTime]);
+
+  
 
   const triggerHaptic = () => {
     if (Platform.OS !== 'web' && settings.vibrationEnabled) {
@@ -48,69 +40,8 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleNotificationPermission = async () => {
-    const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(
-        'Permission Required',
-        'Please enable notifications in your device settings to receive daily reminders.',
-        [{ text: 'OK' }]
-      );
-      return false;
-    }
-    return true;
-  };
+ 
 
-  const scheduleDailyReminder = async () => {
-    if (settings.dailyReminders) {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-      
-      const [hours, minutes] = settings.reminderTime.split(':');
-      
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: '🍅 Timer Reminder',
-          body: 'Time for your focus session! Let\'s get productive!',
-          sound: true,
-        },
-        trigger: {
-          hour: parseInt(hours, 10),
-          minute: parseInt(minutes, 10),
-          repeats: true,
-        },
-      });
-    } else {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-    }
-  };
-
-  const toggleDailyReminders = async (value: boolean) => {
-    if (value) {
-      const hasPermission = await handleNotificationPermission();
-      if (!hasPermission) return;
-    }
-    
-    await updateSettings({ dailyReminders: value });
-    await scheduleDailyReminder();
-    triggerHaptic();
-  };
-
-  const handleTimeChange = async (event: any, selectedTime?: Date) => {
-    setShowTimePicker(false);
-    if (selectedTime) {
-      const hours = selectedTime.getHours().toString().padStart(2, '0');
-      const minutes = selectedTime.getMinutes().toString().padStart(2, '0');
-      const timeString = `${hours}:${minutes}`;
-      
-      await updateSettings({ reminderTime: timeString });
-      setReminderTime(selectedTime);
-      
-      if (settings.dailyReminders) {
-        await scheduleDailyReminder();
-      }
-      triggerHaptic();
-    }
-  };
 
   const resetToDefaults = () => {
     Alert.alert(
@@ -129,11 +60,9 @@ export default function SettingsScreen() {
               breakDuration: 5 * 60,
               longBreakDuration: 15 * 60,
               longBreakInterval: 4,
-              dailyReminders: false,
-              reminderTime: '09:00',
               theme: 'auto',
             });
-            await Notifications.cancelAllScheduledNotificationsAsync();
+            
             triggerHaptic();
           },
         },
@@ -237,118 +166,6 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Timer Defaults</Text>
-          
-          <SettingItem
-            icon={<Clock size={20} color="#4ECDC4" />}
-            title="Work Duration"
-            subtitle={`${Math.floor(settings.workDuration / 60)} minutes`}
-            onPress={() => {
-              Alert.alert(
-                'Work Duration',
-                'Set the default work session duration (1-90 minutes)',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: '15 min', onPress: () => updateSettings({ workDuration: 15 * 60 }) },
-                  { text: '25 min', onPress: () => updateSettings({ workDuration: 25 * 60 }) },
-                  { text: '30 min', onPress: () => updateSettings({ workDuration: 30 * 60 }) },
-                  { text: '45 min', onPress: () => updateSettings({ workDuration: 45 * 60 }) },
-                ]
-              );
-            }}
-            showChevron
-          />
-
-          <SettingItem
-            icon={<Clock size={20} color="#96CEB4" />}
-            title="Break Duration"
-            subtitle={`${Math.floor(settings.breakDuration / 60)} minutes`}
-            onPress={() => {
-              Alert.alert(
-                'Break Duration',
-                'Set the default break duration (1-30 minutes)',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: '5 min', onPress: () => updateSettings({ breakDuration: 5 * 60 }) },
-                  { text: '10 min', onPress: () => updateSettings({ breakDuration: 10 * 60 }) },
-                  { text: '15 min', onPress: () => updateSettings({ breakDuration: 15 * 60 }) },
-                  { text: '20 min', onPress: () => updateSettings({ breakDuration: 20 * 60 }) },
-                ]
-              );
-            }}
-            showChevron
-          />
-
-          <SettingItem
-            icon={<Clock size={20} color="#FFEAA7" />}
-            title="Long Break Duration"
-            subtitle={`${Math.floor(settings.longBreakDuration / 60)} minutes`}
-            onPress={() => {
-              Alert.alert(
-                'Long Break Duration',
-                'Set the duration for long breaks (10-60 minutes)',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: '15 min', onPress: () => updateSettings({ longBreakDuration: 15 * 60 }) },
-                  { text: '20 min', onPress: () => updateSettings({ longBreakDuration: 20 * 60 }) },
-                  { text: '30 min', onPress: () => updateSettings({ longBreakDuration: 30 * 60 }) },
-                  { text: '45 min', onPress: () => updateSettings({ longBreakDuration: 45 * 60 }) },
-                ]
-              );
-            }}
-            showChevron
-          />
-
-          <SettingItem
-            icon={<RotateCcw size={20} color="#DDA0DD" />}
-            title="Long Break Interval"
-            subtitle={`Every ${settings.longBreakInterval} cycles`}
-            onPress={() => {
-              Alert.alert(
-                'Long Break Interval',
-                'After how many cycles should a long break occur?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: '3 cycles', onPress: () => updateSettings({ longBreakInterval: 3 }) },
-                  { text: '4 cycles', onPress: () => updateSettings({ longBreakInterval: 4 }) },
-                  { text: '5 cycles', onPress: () => updateSettings({ longBreakInterval: 5 }) },
-                  { text: '6 cycles', onPress: () => updateSettings({ longBreakInterval: 6 }) },
-                ]
-              );
-            }}
-            showChevron
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-          
-          <SettingItem
-            icon={<Bell size={20} color={settings.dailyReminders ? '#FF6B35' : '#94A3B8'} />}
-            title="Daily Reminders"
-            subtitle={settings.dailyReminders ? `Enabled at ${formatTime(settings.reminderTime)}` : 'Disabled'}
-            rightComponent={
-              <Switch
-                value={settings.dailyReminders}
-                onValueChange={toggleDailyReminders}
-                trackColor={{ false: '#374151', true: '#FF6B35' }}
-                thumbColor="#FFFFFF"
-              />
-            }
-          />
-
-          {settings.dailyReminders && (
-            <SettingItem
-              icon={<Clock size={20} color="#4ECDC4" />}
-              title="Reminder Time"
-              subtitle={formatTime(settings.reminderTime)}
-              onPress={() => setShowTimePicker(true)}
-              showChevron
-            />
-          )}
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
           
           <SettingItem
@@ -391,15 +208,7 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
-      {showTimePicker && (
-        <DateTimePicker
-          value={reminderTime}
-          mode="time"
-          is24Hour={false}
-          display="default"
-          onChange={handleTimeChange}
-        />
-      )}
+      
     </LinearGradient>
   );
 }
