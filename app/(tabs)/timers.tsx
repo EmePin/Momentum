@@ -446,86 +446,124 @@ export default function CustomTimersScreen() {
     </View>
   );
 
-  const SequenceBuilder = () => (
-    <View style={styles.sequenceBuilder}>
-      <Text style={styles.formLabel}>Timer Sequence</Text>
-      <View style={styles.sequenceListContainer}>
-        <ScrollView 
-          style={styles.sequenceList} 
-          showsVerticalScrollIndicator={true}
-          nestedScrollEnabled={true}
-        >
-          {sequence.map((item, index) => (
-            <View key={index} style={styles.sequenceItem}>
-              <View style={styles.sequenceHeader}>
-                <Text style={styles.sequenceIndex}>{index + 1}</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.sequenceTypeButton,
-                    { backgroundColor: item.isBreak ? '#4ECDC4' : '#FF6B35' }
-                  ]}
-                  onPress={() => updateSequenceItem(index, { 
-                    isBreak: !item.isBreak,
-                    label: !item.isBreak ? 'Break' : 'Work'
-                  })}
-                >
-                  <Text style={styles.sequenceTypeText}>
-                    {item.isBreak ? 'Break' : 'Work'}
-                  </Text>
-                </TouchableOpacity>
-                {sequence.length > 1 && (
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeSequenceItem(index)}
-                  >
-                    <Trash2 size={16} color="#FF4444" />
-                  </TouchableOpacity>
-                )}
-              </View>
-              
-              <View style={styles.sequenceDuration}>
-                <View style={styles.timeInput}>
-                  <TextInput
-                    style={styles.timeTextInput}
-                    value={Math.floor(item.duration / 60).toString()}
-                    onChangeText={(text) => {
-                      const minutes = parseInt(text || '0');
-                      const seconds = item.duration % 60;
-                      updateSequenceItem(index, { duration: minutes * 60 + seconds });
-                    }}
-                    keyboardType="numeric"
-                    maxLength={3}
-                    placeholder="25"
-                  />
-                  <Text style={styles.timeUnit}>min</Text>
-                </View>
-                <View style={styles.timeInput}>
-                  <TextInput
-                    style={styles.timeTextInput}
-                    value={(item.duration % 60).toString()}
-                    onChangeText={(text) => {
-                      const minutes = Math.floor(item.duration / 60);
-                      const seconds = parseInt(text || '0');
-                      updateSequenceItem(index, { duration: minutes * 60 + seconds });
-                    }}
-                    keyboardType="numeric"
-                    maxLength={2}
-                    placeholder="0"
-                  />
-                  <Text style={styles.timeUnit}>sec</Text>
-                </View>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-      </View>
+  const SequenceBuilder = () => {
+    const [tempValues, setTempValues] = useState<{[key: string]: {minutes: string, seconds: string}}>({});
+
+    const getTempValue = (index: number, type: 'minutes' | 'seconds') => {
+      const key = `${index}_${type}`;
+      if (tempValues[key]) {
+        return tempValues[key][type];
+      }
+      const item = sequence[index];
+      return type === 'minutes' 
+        ? Math.floor(item.duration / 60).toString()
+        : (item.duration % 60).toString();
+    };
+
+    const setTempValue = (index: number, type: 'minutes' | 'seconds', value: string) => {
+      const key = `${index}_${type}`;
+      setTempValues(prev => ({
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [type]: value
+        }
+      }));
+    };
+
+    const updateDurationFromTemp = (index: number) => {
+      const minutesKey = `${index}_minutes`;
+      const secondsKey = `${index}_seconds`;
       
-      <TouchableOpacity style={styles.addSequenceButton} onPress={addSequenceItem}>
-        <Plus size={20} color="#FF6B35" />
-        <Text style={styles.addSequenceText}>Add Segment</Text>
-      </TouchableOpacity>
-    </View>
-  );
+      const minutes = parseInt(tempValues[minutesKey]?.minutes || Math.floor(sequence[index].duration / 60).toString());
+      const seconds = parseInt(tempValues[secondsKey]?.seconds || (sequence[index].duration % 60).toString());
+      
+      updateSequenceItem(index, { duration: minutes * 60 + seconds });
+      
+      // Limpiar valores temporales
+      setTempValues(prev => {
+        const newTemp = { ...prev };
+        delete newTemp[minutesKey];
+        delete newTemp[secondsKey];
+        return newTemp;
+      });
+    };
+
+    return (
+      <View style={styles.sequenceBuilder}>
+        <Text style={styles.formLabel}>Timer Sequence</Text>
+        <View style={styles.sequenceListContainer}>
+          <ScrollView 
+            style={styles.sequenceList} 
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+          >
+            {sequence.map((item, index) => (
+              <View key={index} style={styles.sequenceItem}>
+                <View style={styles.sequenceHeader}>
+                  <Text style={styles.sequenceIndex}>{index + 1}</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.sequenceTypeButton,
+                      { backgroundColor: item.isBreak ? '#4ECDC4' : '#FF6B35' }
+                    ]}
+                    onPress={() => updateSequenceItem(index, { 
+                      isBreak: !item.isBreak,
+                      label: !item.isBreak ? 'Break' : 'Work'
+                    })}
+                  >
+                    <Text style={styles.sequenceTypeText}>
+                      {item.isBreak ? 'Break' : 'Work'}
+                    </Text>
+                  </TouchableOpacity>
+                  {sequence.length > 1 && (
+                    <TouchableOpacity
+                      style={styles.removeButton}
+                      onPress={() => removeSequenceItem(index)}
+                    >
+                      <Trash2 size={16} color="#FF4444" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                
+                <View style={styles.sequenceDuration}>
+                  <View style={styles.timeInput}>
+                    <TextInput
+                      style={styles.timeTextInput}
+                      value={getTempValue(index, 'minutes')}
+                      onChangeText={(text) => setTempValue(index, 'minutes', text)}
+                      onBlur={() => updateDurationFromTemp(index)}
+                      keyboardType="numeric"
+                      maxLength={3}
+                      placeholder="25"
+                    />
+                    <Text style={styles.timeUnit}>min</Text>
+                  </View>
+                  <View style={styles.timeInput}>
+                    <TextInput
+                      style={styles.timeTextInput}
+                      value={getTempValue(index, 'seconds')}
+                      onChangeText={(text) => setTempValue(index, 'seconds', text)}
+                      onBlur={() => updateDurationFromTemp(index)}
+                      keyboardType="numeric"
+                      maxLength={2}
+                      placeholder="0"
+                    />
+                    <Text style={styles.timeUnit}>sec</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+        
+        <TouchableOpacity style={styles.addSequenceButton} onPress={addSequenceItem}>
+          <Plus size={20} color="#FF6B35" />
+          <Text style={styles.addSequenceText}>Add Segment</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
     <LinearGradient
