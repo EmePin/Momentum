@@ -38,6 +38,8 @@ interface CustomTimerWithSequence extends Omit<CustomTimer, 'workDuration' | 'br
   workDuration?: number;
   breakDuration?: number;
   repetitions?: number;
+  longBreakDuration?: number;
+  longBreakInterval?: number;
   sequence?: TimerSequence[];
 }
 
@@ -54,6 +56,9 @@ export default function CustomTimersScreen() {
     workSeconds: '0',
     breakMinutes: '5',
     breakSeconds: '0',
+    longBreakMinutes: '15',
+    longBreakSeconds: '0',
+    longBreakInterval: '4',
     repetitions: '4',
     color: TIMER_COLORS[0],
     emoji: TIMER_EMOJIS[0],
@@ -97,6 +102,9 @@ export default function CustomTimersScreen() {
       workSeconds: '0',
       breakMinutes: '5',
       breakSeconds: '0',
+      longBreakMinutes: '15',
+      longBreakSeconds: '0',
+      longBreakInterval: '4',
       repetitions: '4',
       color: TIMER_COLORS[0],
       emoji: TIMER_EMOJIS[0],
@@ -119,6 +127,9 @@ export default function CustomTimersScreen() {
           workSeconds: (timer.workDuration! % 60).toString(),
           breakMinutes: Math.floor(timer.breakDuration! / 60).toString(),
           breakSeconds: (timer.breakDuration! % 60).toString(),
+          longBreakMinutes: timer.longBreakDuration ? Math.floor(timer.longBreakDuration / 60).toString() : '15',
+          longBreakSeconds: timer.longBreakDuration ? (timer.longBreakDuration % 60).toString() : '0',
+          longBreakInterval: timer.longBreakInterval ? timer.longBreakInterval.toString() : '4',
           repetitions: timer.repetitions!.toString(),
           color: timer.color,
           emoji: timer.emoji,
@@ -155,6 +166,7 @@ export default function CustomTimersScreen() {
     if (timerType === 'normal') {
       const workDuration = parseInt(formData.workMinutes || '0') * 60 + parseInt(formData.workSeconds || '0');
       const breakDuration = parseInt(formData.breakMinutes || '0') * 60 + parseInt(formData.breakSeconds || '0');
+      const longBreakDuration = parseInt(formData.longBreakMinutes || '0') * 60 + parseInt(formData.longBreakSeconds || '0');
 
       if (workDuration === 0) {
         Alert.alert('Error', 'Work duration must be greater than 0');
@@ -167,6 +179,8 @@ export default function CustomTimersScreen() {
         type: 'normal',
         workDuration,
         breakDuration,
+        longBreakDuration,
+        longBreakInterval: parseInt(formData.longBreakInterval || '4'),
         repetitions: parseInt(formData.repetitions || '1'),
         color: formData.color,
         emoji: formData.emoji,
@@ -258,6 +272,8 @@ export default function CustomTimersScreen() {
         color: timer.color,
         emoji: timer.emoji,
         type: 'normal',
+        longBreakDuration: timer.longBreakDuration,
+        longBreakInterval: timer.longBreakInterval,
       };
       setCurrentTimer(normalTimer);
       setTimerState({
@@ -360,7 +376,7 @@ export default function CustomTimersScreen() {
               </View>
               <View style={styles.statRow}>
                 <Clock size={14} color="#FFFFFF" />
-                <Text style={styles.statText}>Long break after 4 cycles (15m)</Text>
+                <Text style={styles.statText}>Long break after {timer.longBreakInterval} cycles {timer.longBreakDuration/60}</Text>
               </View>
             </>
           ) : (
@@ -665,6 +681,46 @@ export default function CustomTimersScreen() {
                         <Text style={styles.timeUnit}>sec</Text>
                       </View>
                     </View>
+                  </View>
+
+                  <View style={styles.durationGroup}>
+                    <Text style={styles.formLabel}>Long Break Duration</Text>
+                    <View style={styles.durationInputs}>
+                      <View style={styles.timeInput}>
+                        <TextInput
+                          style={styles.timeTextInput}
+                          value={formData.longBreakMinutes}
+                          onChangeText={(text) => setFormData({ ...formData, longBreakMinutes: text })}
+                          keyboardType="numeric"
+                          maxLength={3}
+                          placeholder="15"
+                        />
+                        <Text style={styles.timeUnit}>min</Text>
+                      </View>
+                      <View style={styles.timeInput}>
+                        <TextInput
+                          style={styles.timeTextInput}
+                          value={formData.longBreakSeconds}
+                          onChangeText={(text) => setFormData({ ...formData, longBreakSeconds: text })}
+                          keyboardType="numeric"
+                          maxLength={2}
+                          placeholder="0"
+                        />
+                        <Text style={styles.timeUnit}>sec</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Long Break Interval (cycles)</Text>
+                    <TextInput
+                      style={[styles.textInput, styles.numberInput]}
+                      value={formData.longBreakInterval}
+                      onChangeText={(text) => setFormData({ ...formData, longBreakInterval: text })}
+                      keyboardType="numeric"
+                      maxLength={2}
+                      placeholder="4"
+                    />
                   </View>
 
                   <View style={styles.formGroup}>

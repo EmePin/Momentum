@@ -27,6 +27,8 @@ export interface CustomTimer {
   repetitions: number;
   color: string;
   emoji: string;
+  longBreakDuration?: number;
+  longBreakInterval?: number;
   sequence?: TimerSequence[];
   type?: 'normal' | 'sequence';
 }
