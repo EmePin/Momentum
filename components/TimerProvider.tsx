@@ -7,9 +7,10 @@ interface TimerContextType {
   setCurrentTimer: (timer: CustomTimer | null) => void;
   timerState: TimerState;
   setTimerState: React.Dispatch<React.SetStateAction<TimerState>>;
-  playSound: (soundType: 'pip' | 'pipi' | 'complete') => void;
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
+  playSound: (soundType: 'pip' | 'pipi' | 'complete') => void;
+  nextCycle: () => void;
 }
 
 export interface TimerSequence {
@@ -125,6 +126,23 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const nextCycle = () => {
+    setTimerState((prev) => {
+      const isBreak = prev.currentCycle % (settings.longBreakInterval + 1) === 0;
+      const newCycle = isBreak ? prev.currentCycle + 1 : prev.currentCycle;
+      const newTotalCycles = isBreak ? prev.totalCycles + 1 : prev.totalCycles;
+      const newTimeLeft = isBreak ? settings.longBreakDuration : settings.workDuration;
+
+      return {
+        ...prev,
+        isBreak,
+        currentCycle: newCycle,
+        totalCycles: newTotalCycles,
+        timeLeft: newTimeLeft,
+      };
+    });
+  };
+
   return (
     <TimerContext.Provider
       value={{
@@ -135,6 +153,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
         playSound,
         settings,
         updateSettings,
+        nextCycle,
       }}
     >
       {children}

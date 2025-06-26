@@ -16,6 +16,7 @@ import { Plus, CreditCard as Edit3, Trash2, Play, Clock, Repeat, List } from 'lu
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTimer, CustomTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -57,6 +58,7 @@ export default function CustomTimersScreen() {
     color: TIMER_COLORS[0],
     emoji: TIMER_EMOJIS[0],
   });
+  const router = useRouter();
 
   useEffect(() => {
     loadTimers();
@@ -246,6 +248,7 @@ export default function CustomTimersScreen() {
     triggerHaptic();
     
     if (timer.type === 'normal') {
+      // Para Pomodoro normal - usar lógica tradicional con descansos largos
       const normalTimer: CustomTimer = {
         id: timer.id,
         name: timer.name,
@@ -254,6 +257,7 @@ export default function CustomTimersScreen() {
         repetitions: timer.repetitions!,
         color: timer.color,
         emoji: timer.emoji,
+        type: 'normal',
       };
       setCurrentTimer(normalTimer);
       setTimerState({
@@ -263,13 +267,16 @@ export default function CustomTimersScreen() {
         currentCycle: 1,
         totalCycles: timer.repetitions!,
       });
+      
+      // Navegar a pantalla de Pomodoro tradicional
+      router.push('/pomodoro');
     } else {
-      // Para timers de secuencia, usar formato especial
+      // Para Custom Pomodoro - lógica completamente diferente sin breaks
       const sequenceTimer: CustomTimer = {
         id: timer.id,
         name: timer.name,
         workDuration: timer.sequence![0].duration,
-        breakDuration: 0,
+        breakDuration: 0, // NO usar breaks
         repetitions: timer.sequence!.length,
         color: timer.color,
         emoji: timer.emoji,
@@ -284,6 +291,9 @@ export default function CustomTimersScreen() {
         currentCycle: 1,
         totalCycles: timer.sequence!.length,
       });
+      
+      // Navegar a pantalla de Custom Timer
+      router.push('/custom-timer');
     }
   };
 
