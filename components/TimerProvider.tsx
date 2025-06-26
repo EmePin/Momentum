@@ -12,6 +12,12 @@ interface TimerContextType {
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
 }
 
+export interface TimerSequence {
+  duration: number;
+  isBreak: boolean;
+  label?: string;
+}
+
 export interface CustomTimer {
   id: string;
   name: string;
@@ -20,6 +26,8 @@ export interface CustomTimer {
   repetitions: number;
   color: string;
   emoji: string;
+  sequence?: TimerSequence[];
+  type?: 'normal' | 'sequence';
 }
 
 export interface TimerState {

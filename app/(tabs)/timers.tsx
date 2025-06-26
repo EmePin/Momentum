@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, CreditCard as Edit3, Trash2, Play, Clock, Repeat } from 'lucide-react-native';
+import { Plus, CreditCard as Edit3, Trash2, Play, Clock, Repeat, List } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTimer, CustomTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
@@ -26,11 +26,27 @@ const TIMER_COLORS = [
 
 const TIMER_EMOJIS = ['🍅', '📚', '💪', '🎯', '🚀', '⭐', '🌟', '🔥', '💎', '🎨', '🎮', '🏃'];
 
+interface TimerSequence {
+  duration: number;
+  isBreak: boolean;
+  label?: string;
+}
+
+interface CustomTimerWithSequence extends Omit<CustomTimer, 'workDuration' | 'breakDuration' | 'repetitions'> {
+  type: 'normal' | 'sequence';
+  workDuration?: number;
+  breakDuration?: number;
+  repetitions?: number;
+  sequence?: TimerSequence[];
+}
+
 export default function CustomTimersScreen() {
-  const [timers, setTimers] = useState<CustomTimer[]>([]);
+  const [timers, setTimers] = useState<CustomTimerWithSequence[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingTimer, setEditingTimer] = useState<CustomTimer | null>(null);
+  const [editingTimer, setEditingTimer] = useState<CustomTimerWithSequence | null>(null);
   const { setCurrentTimer, setTimerState, settings } = useTimer();
+  const [timerType, setTimerType] = useState<'normal' | 'sequence'>('normal');
+  const [sequence, setSequence] = useState<TimerSequence[]>([{ duration: 25 * 60, isBreak: false, label: 'Work' }]);
   const [formData, setFormData] = useState({
     name: '',
     workMinutes: '25',
@@ -63,7 +79,7 @@ export default function CustomTimersScreen() {
     }
   };
 
-  const saveTimers = async (updatedTimers: CustomTimer[]) => {
+  const saveTimers = async (updatedTimers: CustomTimerWithSequence[]) => {
     try {
       await AsyncStorage.setItem('customTimers', JSON.stringify(updatedTimers));
       setTimers(updatedTimers);
@@ -83,23 +99,37 @@ export default function CustomTimersScreen() {
       color: TIMER_COLORS[0],
       emoji: TIMER_EMOJIS[0],
     });
+    setTimerType('normal');
+    setSequence([{ duration: 25 * 60, isBreak: false, label: 'Work' }]);
     setEditingTimer(null);
   };
 
-  const openModal = (timer?: CustomTimer) => {
+  const openModal = (timer?: CustomTimerWithSequence) => {
     triggerHaptic();
     if (timer) {
       setEditingTimer(timer);
-      setFormData({
-        name: timer.name,
-        workMinutes: Math.floor(timer.workDuration / 60).toString(),
-        workSeconds: (timer.workDuration % 60).toString(),
-        breakMinutes: Math.floor(timer.breakDuration / 60).toString(),
-        breakSeconds: (timer.breakDuration % 60).toString(),
-        repetitions: timer.repetitions.toString(),
-        color: timer.color,
-        emoji: timer.emoji,
-      });
+      setTimerType(timer.type);
+      
+      if (timer.type === 'normal') {
+        setFormData({
+          name: timer.name,
+          workMinutes: Math.floor(timer.workDuration! / 60).toString(),
+          workSeconds: (timer.workDuration! % 60).toString(),
+          breakMinutes: Math.floor(timer.breakDuration! / 60).toString(),
+          breakSeconds: (timer.breakDuration! % 60).toString(),
+          repetitions: timer.repetitions!.toString(),
+          color: timer.color,
+          emoji: timer.emoji,
+        });
+      } else {
+        setFormData({
+          ...formData,
+          name: timer.name,
+          color: timer.color,
+          emoji: timer.emoji,
+        });
+        setSequence(timer.sequence || []);
+      }
     } else {
       resetForm();
     }
@@ -118,23 +148,42 @@ export default function CustomTimersScreen() {
       return;
     }
 
-    const workDuration = parseInt(formData.workMinutes || '0') * 60 + parseInt(formData.workSeconds || '0');
-    const breakDuration = parseInt(formData.breakMinutes || '0') * 60 + parseInt(formData.breakSeconds || '0');
+    let newTimer: CustomTimerWithSequence;
 
-    if (workDuration === 0) {
-      Alert.alert('Error', 'Work duration must be greater than 0');
-      return;
+    if (timerType === 'normal') {
+      const workDuration = parseInt(formData.workMinutes || '0') * 60 + parseInt(formData.workSeconds || '0');
+      const breakDuration = parseInt(formData.breakMinutes || '0') * 60 + parseInt(formData.breakSeconds || '0');
+
+      if (workDuration === 0) {
+        Alert.alert('Error', 'Work duration must be greater than 0');
+        return;
+      }
+
+      newTimer = {
+        id: editingTimer?.id || Date.now().toString(),
+        name: formData.name.trim(),
+        type: 'normal',
+        workDuration,
+        breakDuration,
+        repetitions: parseInt(formData.repetitions || '1'),
+        color: formData.color,
+        emoji: formData.emoji,
+      };
+    } else {
+      if (sequence.length === 0) {
+        Alert.alert('Error', 'Sequence must have at least one timer');
+        return;
+      }
+
+      newTimer = {
+        id: editingTimer?.id || Date.now().toString(),
+        name: formData.name.trim(),
+        type: 'sequence',
+        sequence: sequence,
+        color: formData.color,
+        emoji: formData.emoji,
+      };
     }
-
-    const newTimer: CustomTimer = {
-      id: editingTimer?.id || Date.now().toString(),
-      name: formData.name.trim(),
-      workDuration,
-      breakDuration,
-      repetitions: parseInt(formData.repetitions || '1'),
-      color: formData.color,
-      emoji: formData.emoji,
-    };
 
     let updatedTimers;
     if (editingTimer) {
@@ -169,16 +218,73 @@ export default function CustomTimersScreen() {
     );
   };
 
-  const startTimer = (timer: CustomTimer) => {
+  const addSequenceItem = () => {
+    setSequence([...sequence, { duration: 5 * 60, isBreak: true, label: 'Break' }]);
+  };
+
+  const removeSequenceItem = (index: number) => {
+    if (sequence.length > 1) {
+      setSequence(sequence.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateSequenceItem = (index: number, updates: Partial<TimerSequence>) => {
+    const newSequence = [...sequence];
+    newSequence[index] = { ...newSequence[index], ...updates };
+    setSequence(newSequence);
+  };
+
+  const getTotalDuration = (timer: CustomTimerWithSequence) => {
+    if (timer.type === 'normal') {
+      return (timer.workDuration! + timer.breakDuration!) * timer.repetitions!;
+    } else {
+      return timer.sequence!.reduce((total, item) => total + item.duration, 0);
+    }
+  };
+
+  const startTimer = (timer: CustomTimerWithSequence) => {
     triggerHaptic();
-    setCurrentTimer(timer);
-    setTimerState({
-      isRunning: false,
-      timeLeft: timer.workDuration,
-      isBreak: false,
-      currentCycle: 1,
-      totalCycles: timer.repetitions,
-    });
+    
+    if (timer.type === 'normal') {
+      const normalTimer: CustomTimer = {
+        id: timer.id,
+        name: timer.name,
+        workDuration: timer.workDuration!,
+        breakDuration: timer.breakDuration!,
+        repetitions: timer.repetitions!,
+        color: timer.color,
+        emoji: timer.emoji,
+      };
+      setCurrentTimer(normalTimer);
+      setTimerState({
+        isRunning: false,
+        timeLeft: timer.workDuration!,
+        isBreak: false,
+        currentCycle: 1,
+        totalCycles: timer.repetitions!,
+      });
+    } else {
+      // Para timers de secuencia, usar formato especial
+      const sequenceTimer: CustomTimer = {
+        id: timer.id,
+        name: timer.name,
+        workDuration: timer.sequence![0].duration,
+        breakDuration: 0,
+        repetitions: timer.sequence!.length,
+        color: timer.color,
+        emoji: timer.emoji,
+        sequence: timer.sequence,
+        type: 'sequence',
+      };
+      setCurrentTimer(sequenceTimer);
+      setTimerState({
+        isRunning: false,
+        timeLeft: timer.sequence![0].duration,
+        isBreak: timer.sequence![0].isBreak,
+        currentCycle: 1,
+        totalCycles: timer.sequence!.length,
+      });
+    }
   };
 
   const formatDuration = (seconds: number) => {
@@ -190,7 +296,7 @@ export default function CustomTimersScreen() {
     return `${mins}m ${secs}s`;
   };
 
-  const TimerCard = ({ timer }: { timer: CustomTimer }) => (
+  const TimerCard = ({ timer }: { timer: CustomTimerWithSequence }) => (
     <TouchableOpacity 
       style={styles.timerCard} 
       activeOpacity={0.8}
@@ -205,6 +311,11 @@ export default function CustomTimersScreen() {
         <View style={styles.timerCardHeader}>
           <Text style={styles.timerEmoji}>{timer.emoji}</Text>
           <View style={styles.timerCardActions}>
+            <View style={styles.timerTypeLabel}>
+              <Text style={styles.timerTypeLabelText}>
+                {timer.type === 'normal' ? 'Pomodoro' : 'Custom Pomodoro'}
+              </Text>
+            </View>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => openModal(timer)}
@@ -223,18 +334,37 @@ export default function CustomTimersScreen() {
         <Text style={styles.timerName}>{timer.name}</Text>
 
         <View style={styles.timerStats}>
-          <View style={styles.statRow}>
-            <Clock size={14} color="#FFFFFF" />
-            <Text style={styles.statText}>Work: {formatDuration(timer.workDuration)}</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Clock size={14} color="#FFFFFF" />
-            <Text style={styles.statText}>Break: {formatDuration(timer.breakDuration)}</Text>
-          </View>
-          <View style={styles.statRow}>
-            <Repeat size={14} color="#FFFFFF" />
-            <Text style={styles.statText}>{timer.repetitions} cycles</Text>
-          </View>
+          {timer.type === 'normal' ? (
+            <>
+              <View style={styles.statRow}>
+                <Clock size={14} color="#FFFFFF" />
+                <Text style={styles.statText}>Work: {formatDuration(timer.workDuration!)}</Text>
+              </View>
+              <View style={styles.statRow}>
+                <Clock size={14} color="#FFFFFF" />
+                <Text style={styles.statText}>Break: {formatDuration(timer.breakDuration!)}</Text>
+              </View>
+              <View style={styles.statRow}>
+                <Repeat size={14} color="#FFFFFF" />
+                <Text style={styles.statText}>{timer.repetitions} cycles</Text>
+              </View>
+              <View style={styles.statRow}>
+                <Clock size={14} color="#FFFFFF" />
+                <Text style={styles.statText}>Long break after 4 cycles (15m)</Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.statRow}>
+                <List size={14} color="#FFFFFF" />
+                <Text style={styles.statText}>{timer.sequence!.length} segments</Text>
+              </View>
+              <View style={styles.statRow}>
+                <Clock size={14} color="#FFFFFF" />
+                <Text style={styles.statText}>Total: {formatDuration(getTotalDuration(timer))}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.playButton}>
@@ -290,23 +420,104 @@ export default function CustomTimersScreen() {
     </View>
   );
 
+  const SequenceBuilder = () => (
+    <View style={styles.sequenceBuilder}>
+      <Text style={styles.formLabel}>Timer Sequence</Text>
+      <View style={styles.sequenceListContainer}>
+        <ScrollView 
+          style={styles.sequenceList} 
+          showsVerticalScrollIndicator={true}
+          nestedScrollEnabled={true}
+        >
+          {sequence.map((item, index) => (
+            <View key={index} style={styles.sequenceItem}>
+              <View style={styles.sequenceHeader}>
+                <Text style={styles.sequenceIndex}>{index + 1}</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.sequenceTypeButton,
+                    { backgroundColor: item.isBreak ? '#4ECDC4' : '#FF6B35' }
+                  ]}
+                  onPress={() => updateSequenceItem(index, { 
+                    isBreak: !item.isBreak,
+                    label: !item.isBreak ? 'Break' : 'Work'
+                  })}
+                >
+                  <Text style={styles.sequenceTypeText}>
+                    {item.isBreak ? 'Break' : 'Work'}
+                  </Text>
+                </TouchableOpacity>
+                {sequence.length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => removeSequenceItem(index)}
+                  >
+                    <Trash2 size={16} color="#FF4444" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              <View style={styles.sequenceDuration}>
+                <View style={styles.timeInput}>
+                  <TextInput
+                    style={styles.timeTextInput}
+                    value={Math.floor(item.duration / 60).toString()}
+                    onChangeText={(text) => {
+                      const minutes = parseInt(text || '0');
+                      const seconds = item.duration % 60;
+                      updateSequenceItem(index, { duration: minutes * 60 + seconds });
+                    }}
+                    keyboardType="numeric"
+                    maxLength={3}
+                    placeholder="25"
+                  />
+                  <Text style={styles.timeUnit}>min</Text>
+                </View>
+                <View style={styles.timeInput}>
+                  <TextInput
+                    style={styles.timeTextInput}
+                    value={(item.duration % 60).toString()}
+                    onChangeText={(text) => {
+                      const minutes = Math.floor(item.duration / 60);
+                      const seconds = parseInt(text || '0');
+                      updateSequenceItem(index, { duration: minutes * 60 + seconds });
+                    }}
+                    keyboardType="numeric"
+                    maxLength={2}
+                    placeholder="0"
+                  />
+                  <Text style={styles.timeUnit}>sec</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+      
+      <TouchableOpacity style={styles.addSequenceButton} onPress={addSequenceItem}>
+        <Plus size={20} color="#FF6B35" />
+        <Text style={styles.addSequenceText}>Add Segment</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <LinearGradient
       colors={['#1E293B', '#334155', '#475569']}
       style={styles.container}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Custom Timers</Text>
+        <Text style={styles.title}>Pomodoro</Text>
         <Text style={styles.subtitle}>Create your perfect focus sessions</Text>
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {timers.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>⏰</Text>
-            <Text style={styles.emptyTitle}>No Custom Timers Yet</Text>
+            <Text style={styles.emptyEmoji}>🍅</Text>
+            <Text style={styles.emptyTitle}>No Custom Pomodoros Yet</Text>
             <Text style={styles.emptyText}>
-              Create your first custom timer to get started with personalized focus sessions!
+              Create your first custom pomodoro timer to get started with personalized focus sessions!
             </Text>
           </View>
         ) : (
@@ -336,7 +547,7 @@ export default function CustomTimersScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>
-              {editingTimer ? 'Edit Timer' : 'Create New Timer'}
+              {editingTimer ? 'Edit Pomodoro' : 'Create New Pomodoro'}
             </Text>
 
             <ScrollView showsVerticalScrollIndicator={false}>
@@ -351,73 +562,116 @@ export default function CustomTimersScreen() {
                 />
               </View>
 
-              <View style={styles.durationGroup}>
-                <Text style={styles.formLabel}>Work Duration</Text>
-                <View style={styles.durationInputs}>
-                  <View style={styles.timeInput}>
-                    <TextInput
-                      style={styles.timeTextInput}
-                      value={formData.workMinutes}
-                      onChangeText={(text) => setFormData({ ...formData, workMinutes: text })}
-                      keyboardType="numeric"
-                      maxLength={3}
-                      placeholder="25"
-                    />
-                    <Text style={styles.timeUnit}>min</Text>
-                  </View>
-                  <View style={styles.timeInput}>
-                    <TextInput
-                      style={styles.timeTextInput}
-                      value={formData.workSeconds}
-                      onChangeText={(text) => setFormData({ ...formData, workSeconds: text })}
-                      keyboardType="numeric"
-                      maxLength={2}
-                      placeholder="0"
-                    />
-                    <Text style={styles.timeUnit}>sec</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View style={styles.durationGroup}>
-                <Text style={styles.formLabel}>Break Duration</Text>
-                <View style={styles.durationInputs}>
-                  <View style={styles.timeInput}>
-                    <TextInput
-                      style={styles.timeTextInput}
-                      value={formData.breakMinutes}
-                      onChangeText={(text) => setFormData({ ...formData, breakMinutes: text })}
-                      keyboardType="numeric"
-                      maxLength={3}
-                      placeholder="5"
-                    />
-                    <Text style={styles.timeUnit}>min</Text>
-                  </View>
-                  <View style={styles.timeInput}>
-                    <TextInput
-                      style={styles.timeTextInput}
-                      value={formData.breakSeconds}
-                      onChangeText={(text) => setFormData({ ...formData, breakSeconds: text })}
-                      keyboardType="numeric"
-                      maxLength={2}
-                      placeholder="0"
-                    />
-                    <Text style={styles.timeUnit}>sec</Text>
-                  </View>
-                </View>
-              </View>
-
               <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Number of Cycles</Text>
-                <TextInput
-                  style={[styles.textInput, styles.numberInput]}
-                  value={formData.repetitions}
-                  onChangeText={(text) => setFormData({ ...formData, repetitions: text })}
-                  keyboardType="numeric"
-                  maxLength={2}
-                  placeholder="4"
-                />
+                <Text style={styles.formLabel}>Timer Type</Text>
+                <View style={styles.timerTypeSelector}>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeButton,
+                      timerType === 'normal' && styles.selectedTypeButton
+                    ]}
+                    onPress={() => setTimerType('normal')}
+                  >
+                    <Repeat size={20} color={timerType === 'normal' ? '#FFFFFF' : '#64748B'} />
+                    <Text style={[
+                      styles.typeButtonText,
+                      timerType === 'normal' && styles.selectedTypeButtonText
+                    ]}>
+                      Normal
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[
+                      styles.typeButton,
+                      timerType === 'sequence' && styles.selectedTypeButton
+                    ]}
+                    onPress={() => setTimerType('sequence')}
+                  >
+                    <List size={20} color={timerType === 'sequence' ? '#FFFFFF' : '#64748B'} />
+                    <Text style={[
+                      styles.typeButtonText,
+                      timerType === 'sequence' && styles.selectedTypeButtonText
+                    ]}>
+                      Custom Sequence
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
+
+              {timerType === 'normal' ? (
+                <>
+                  <View style={styles.durationGroup}>
+                    <Text style={styles.formLabel}>Work Duration</Text>
+                    <View style={styles.durationInputs}>
+                      <View style={styles.timeInput}>
+                        <TextInput
+                          style={styles.timeTextInput}
+                          value={formData.workMinutes}
+                          onChangeText={(text) => setFormData({ ...formData, workMinutes: text })}
+                          keyboardType="numeric"
+                          maxLength={3}
+                          placeholder="25"
+                        />
+                        <Text style={styles.timeUnit}>min</Text>
+                      </View>
+                      <View style={styles.timeInput}>
+                        <TextInput
+                          style={styles.timeTextInput}
+                          value={formData.workSeconds}
+                          onChangeText={(text) => setFormData({ ...formData, workSeconds: text })}
+                          keyboardType="numeric"
+                          maxLength={2}
+                          placeholder="0"
+                        />
+                        <Text style={styles.timeUnit}>sec</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.durationGroup}>
+                    <Text style={styles.formLabel}>Break Duration</Text>
+                    <View style={styles.durationInputs}>
+                      <View style={styles.timeInput}>
+                        <TextInput
+                          style={styles.timeTextInput}
+                          value={formData.breakMinutes}
+                          onChangeText={(text) => setFormData({ ...formData, breakMinutes: text })}
+                          keyboardType="numeric"
+                          maxLength={3}
+                          placeholder="5"
+                        />
+                        <Text style={styles.timeUnit}>min</Text>
+                      </View>
+                      <View style={styles.timeInput}>
+                        <TextInput
+                          style={styles.timeTextInput}
+                          value={formData.breakSeconds}
+                          onChangeText={(text) => setFormData({ ...formData, breakSeconds: text })}
+                          keyboardType="numeric"
+                          maxLength={2}
+                          placeholder="0"
+                        />
+                        <Text style={styles.timeUnit}>sec</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.formGroup}>
+                    <Text style={styles.formLabel}>Number of Cycles</Text>
+                    <TextInput
+                      style={[styles.textInput, styles.numberInput]}
+                      value={formData.repetitions}
+                      onChangeText={(text) => setFormData({ ...formData, repetitions: text })}
+                      keyboardType="numeric"
+                      maxLength={2}
+                      placeholder="4"
+                    />
+                  </View>
+                </>
+              ) : (
+                <SequenceBuilder />
+              )}
 
               <ColorPicker />
               <EmojiPicker />
@@ -516,11 +770,23 @@ const styles = StyleSheet.create({
   timerCardActions: {
     flexDirection: 'row',
     gap: 8,
+    alignItems: 'center',
   },
   actionButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 16,
     padding: 8,
+  },
+  timerTypeLabel: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  timerTypeLabelText: {
+    fontSize: 10,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
   },
   timerName: {
     fontSize: 20,
@@ -722,5 +988,135 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
+  },
+  timerTypeIndicator: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 12,
+    padding: 6,
+    marginRight: 4,
+  },
+  timerTypeSelector: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  typeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+  },
+  selectedTypeButton: {
+    backgroundColor: '#FF6B35',
+    borderColor: '#FF6B35',
+  },
+  typeButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#64748B',
+    marginLeft: 8,
+  },
+  selectedTypeButtonText: {
+    color: '#FFFFFF',
+  },
+  sequenceBuilder: {
+    marginBottom: 20,
+  },
+  sequenceListContainer: {
+    height: 250,
+    marginBottom: 12,
+  },
+  sequenceList: {
+    flex: 1,
+  },
+  sequencePreviewContainer: {
+    height: 100,
+    marginTop: 8,
+  },
+  sequencePreview: {
+    flex: 1,
+  },
+  sequencePreviewContent: {
+    paddingBottom: 8,
+  },
+  sequenceSegment: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sequenceSegmentText: {
+    fontSize: 11,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+  },
+  sequenceSegmentType: {
+    fontSize: 9,
+    fontFamily: 'Inter-Regular',
+    color: '#FFFFFF',
+    opacity: 0.8,
+  },
+  sequenceItem: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  sequenceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sequenceIndex: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#334155',
+    marginRight: 12,
+    minWidth: 24,
+  },
+  sequenceTypeButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 12,
+  },
+  sequenceTypeText: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+  },
+  removeButton: {
+    marginLeft: 'auto',
+    padding: 4,
+  },
+  sequenceDuration: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  addSequenceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FF6B35',
+    borderStyle: 'dashed',
+  },
+  addSequenceText: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FF6B35',
+    marginLeft: 8,
   },
 });

@@ -13,10 +13,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Play, Pause, RotateCcw, Settings as SettingsIcon } from 'lucide-react-native';
 import { useTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen() {
+   const router = useRouter();
   const { 
     currentTimer, 
     timerState, 
@@ -247,7 +249,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        <TouchableOpacity style={styles.secondaryButton}>
+        <TouchableOpacity style={styles.secondaryButton}onPress={() => router.push('/settings')}>
           <SettingsIcon size={24} color="#94A3B8" />
         </TouchableOpacity>
       </View>
