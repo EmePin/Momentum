@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, CreditCard as Edit3, Trash2, Play, Clock, Repeat, List, Edit2 } from 'lucide-react-native';
+import { Plus, CreditCard as Edit3, Trash2, Play, Clock, Repeat, List, Edit2, X } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTimer, CustomTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
@@ -376,7 +376,7 @@ export default function CustomTimersScreen() {
               </View>
               <View style={styles.statRow}>
                 <Clock size={14} color="#FFFFFF" />
-                <Text style={styles.statText}>Long break after {timer.longBreakInterval} cycles {timer.longBreakDuration/60}</Text>
+                <Text style={styles.statText}>Long break of {formatDuration(timer.longBreakDuration!)} after {timer.longBreakInterval} cycles</Text>
               </View>
             </>
           ) : (
@@ -610,6 +610,14 @@ export default function CustomTimersScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
+            {/* Botón X para cerrar el modal */}
+            <TouchableOpacity
+              style={styles.closeModalButton}
+              onPress={closeModal}
+              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+            >
+              <X size={24} color="#64748B" />
+            </TouchableOpacity>
             <Text style={styles.modalTitle}>
               {editingTimer ? 'Edit Pomodoro' : 'Create New Pomodoro'}
             </Text>
@@ -1222,5 +1230,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#FF6B35',
     marginLeft: 8,
+  },
+  closeModalButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
+    padding: 4,
   },
 });

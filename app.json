@@ -9,7 +9,19 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aimeepineda.Momentum",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icons/adaptive-icon.png",
+        "monochromeImage": "./assets/images/icons/adaptive-icon.png",
+        "backgroundColor": "#201E2B"
+      },
+      "package": "com.aimeepineda.Momentum"
     },
     "web": {
       "bundler": "metro",
@@ -20,10 +32,29 @@
       "expo-router",
       "expo-font",
       "expo-web-browser",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/icons/splash-icon-light.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#201E2B",
+          "dark": {
+            "image": "./assets/images/icons/splash-icon-dark.png",
+            "backgroundColor": "#201E2B"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "23d6e9be-8767-42af-b414-0d451906fc66"
+      }
     }
   }
 }
