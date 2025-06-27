@@ -165,7 +165,7 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
           
           <SettingItem
@@ -190,7 +190,7 @@ export default function SettingsScreen() {
             }}
             showChevron
           />
-        </View>
+        </View> */}
 
         <TouchableOpacity style={styles.resetButton} onPress={resetToDefaults}>
           <LinearGradient
