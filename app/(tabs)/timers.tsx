@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Plus, CreditCard as Edit3, Trash2, Play, Clock, Repeat, List } from 'lucide-react-native';
+import { Plus, CreditCard as Edit3, Trash2, Play, Clock, Repeat, List, Edit2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTimer, CustomTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
@@ -346,7 +346,7 @@ export default function CustomTimersScreen() {
               style={styles.actionButton}
               onPress={() => openModal(timer)}
             >
-              <Edit3 size={16} color="#FFFFFF" />
+              <Edit2 size={16} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}

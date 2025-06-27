@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Play, Pause, RotateCcw, ArrowLeft } from 'lucide-react-native';
+import { Play, Pause, RotateCcw, ArrowLeft,Settings as SettingsIcon, Edit2 } from 'lucide-react-native';
 import { useTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -33,8 +33,9 @@ export default function PomodoroScreen() {
 
   const workDuration = currentTimer?.workDuration || settings.workDuration;
   const breakDuration = currentTimer?.breakDuration || settings.breakDuration;
-  const longBreakDuration = settings.longBreakDuration;
+  const longBreakDuration = currentTimer?.longBreakDuration||settings.longBreakDuration;
   const totalCycles = currentTimer?.repetitions || settings.longBreakInterval;
+  const longBreakInterval = currentTimer?.longBreakInterval ||settings.longBreakInterval;
 
   useEffect(() => {
     if (timerState.isRunning && timerState.timeLeft > 0) {
@@ -81,7 +82,7 @@ export default function PomodoroScreen() {
   };
 
   const isCurrentLongBreak = () => {
-    return timerState.isBreak && (timerState.currentCycle % settings.longBreakInterval === 0);
+    return timerState.isBreak && (timerState.currentCycle % longBreakInterval  === 0);
   };
 
   const handleTimerComplete = async () => {
@@ -90,14 +91,14 @@ export default function PomodoroScreen() {
     if (!timerState.isBreak) {
       // Trabajo completado, iniciar descanso
       await playSound('pipi');
-      const isLongBreak = timerState.currentCycle % settings.longBreakInterval === 0;
+      const isLongBreak = timerState.currentCycle % longBreakInterval  === 0;
       const nextBreakDuration = isLongBreak ? longBreakDuration : breakDuration;
       
       setTimerState(prev => ({
         ...prev,
         isBreak: true,
         timeLeft: nextBreakDuration,
-        isRunning: false,
+        isRunning: true,
       }));
     } else {
       // Descanso completado
@@ -113,7 +114,7 @@ export default function PomodoroScreen() {
           isBreak: false,
           timeLeft: workDuration,
           currentCycle: prev.currentCycle + 1,
-          isRunning: false,
+          isRunning: true,
         }));
       }
     }
@@ -277,7 +278,12 @@ export default function PomodoroScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        <View style={styles.secondaryButton} />
+        <TouchableOpacity style={styles.secondaryButton}onPress={() => router.push('/(tabs)/timers')}>
+          <Edit2 size={24} color="#94A3B8" />
+        </TouchableOpacity>
+
+
+        
       </View>
 
       <View style={styles.stats}>

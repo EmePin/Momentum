@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Timer, Plus, Settings } from 'lucide-react-native';
+import { Timer, Plus, Settings, Home } from 'lucide-react-native';
 import { StyleSheet,Platform } from 'react-native';
 
 
@@ -16,18 +16,18 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Timer',
+          title: 'Home',
           tabBarIcon: ({ size, color }) => (
-            <Timer size={size} color={color} />
+            <Home size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="timers"
         options={{
-          title: 'Custom',
+          title: 'Timers',
           tabBarIcon: ({ size, color }) => (
-            <Plus size={size} color={color} />
+            <Timer size={size} color={color} />
           ),
         }}
       />

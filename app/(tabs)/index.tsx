@@ -18,10 +18,16 @@ export default function HomeScreen() {
   const router = useRouter();
   const { currentTimer, timerState } = useTimer();
 
-  const QuickAccessCard = ({ title, description, icon: Icon, onPress, color }: {
+  const QuickAccessCard = ({
+    title,
+    description,
+    icon: Icon,
+    onPress,
+    color,
+  }: {
     title: string;
     description: string;
-    icon: any;
+    icon: React.ElementType;
     onPress: () => void;
     color: string;
   }) => (
@@ -44,16 +50,16 @@ export default function HomeScreen() {
       colors={['#1E293B', '#334155', '#475569']}
       style={styles.container}
     >
-      
-        <View style={styles.header}>
-          <Text style={styles.title}>Focus Timer</Text>
-          <Text style={styles.subtitle}>Your productivity companion</Text>
-        </View>
-<ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Focus Timer</Text>
+        <Text style={styles.subtitle}>Your productivity companion</Text>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {currentTimer && (
           <View style={styles.currentTimerSection}>
             <Text style={styles.sectionTitle}>Active Timer</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.currentTimerCard}
               onPress={() => {
                 if (currentTimer.type === 'sequence') {
@@ -72,12 +78,15 @@ export default function HomeScreen() {
                   <View style={styles.currentTimerInfo}>
                     <Text style={styles.currentTimerName}>{currentTimer.name}</Text>
                     <Text style={styles.currentTimerStatus}>
-                      {timerState.isRunning ? 'Running' : 'Paused'} • {Math.floor(timerState.timeLeft / 60)}:{(timerState.timeLeft % 60).toString().padStart(2, '0')}
+                      {timerState.isRunning ? 'Running' : 'Paused'} •{' '}
+                      {Math.floor(timerState.timeLeft / 60)}:
+                      {(timerState.timeLeft % 60).toString().padStart(2, '0')}
                     </Text>
                   </View>
                 </View>
                 <Text style={styles.currentTimerCycle}>
-                  {currentTimer.type === 'sequence' ? 'Segment' : 'Cycle'} {timerState.currentCycle}/{timerState.totalCycles}
+                  {currentTimer.type === 'sequence' ? 'Segment' : 'Cycle'}{' '}
+                  {timerState.currentCycle}/{timerState.totalCycles}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -86,7 +95,7 @@ export default function HomeScreen() {
 
         <View style={styles.quickAccessSection}>
           <Text style={styles.sectionTitle}>Quick Access</Text>
-          <View style={styles.quickAccessGrid}>
+          <View style={[styles.quickAccessGrid, { flexDirection: 'row', gap: 16 }]}>
             <QuickAccessCard
               title="Pomodoro Timers"
               description="Traditional focus sessions with breaks"
@@ -95,11 +104,11 @@ export default function HomeScreen() {
               onPress={() => router.push('/timers')}
             />
             <QuickAccessCard
-              title="Custom Timers"
-              description="Create your own timer sequences"
+              title="Task List"
+              description="Organize and manage your tasks"
               icon={Zap}
               color="#4ECDC4"
-              onPress={() => router.push('/custom')}
+              onPress={() => router.push('/tasks')}
             />
           </View>
         </View>
@@ -122,13 +131,6 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-
-      <TouchableOpacity 
-        style={styles.settingsButton} 
-        onPress={() => router.push('/settings')}
-      >
-        <SettingsIcon size={24} color="#94A3B8" />
-      </TouchableOpacity>
     </LinearGradient>
   );
 }
@@ -209,17 +211,22 @@ const styles = StyleSheet.create({
   quickAccessGrid: {
     flexDirection: 'row',
     gap: 16,
+    alignItems: 'stretch', // Asegura misma altura
   },
   quickAccessCard: {
     flex: 1,
     borderRadius: 16,
     overflow: 'hidden',
+    minHeight: 120,
+    // Asegura que ambas tarjetas ocupen el mismo alto
+    justifyContent: 'stretch',
   },
   cardGradient: {
+    flex: 1,
     padding: 20,
     alignItems: 'center',
-    minHeight: 120,
     justifyContent: 'center',
+    minHeight: 120,
   },
   cardTitle: {
     fontSize: 16,
@@ -260,16 +267,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#94A3B8',
-  },
-  settingsButton: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
