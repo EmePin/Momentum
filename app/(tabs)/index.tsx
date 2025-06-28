@@ -51,7 +51,7 @@ export default function HomeScreen() {
       style={styles.container}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Focus Timer</Text>
+        <Text style={styles.title}>Momentum</Text>
         <Text style={styles.subtitle}>Your productivity companion</Text>
       </View>
 
