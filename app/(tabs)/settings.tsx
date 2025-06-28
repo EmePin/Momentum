@@ -26,6 +26,7 @@ import {
 import { useTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Link } from 'expo-router';
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useTimer();
@@ -203,8 +204,17 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Timer v1.0.0</Text>
+          <Text style={styles.footerText}>Momentum v1.0.0</Text>
           <Text style={styles.footerSubtext}>Made with ❤️ for productivity</Text>
+          <Text style={styles.footerSubtext}>
+            By{' '}
+            <Link 
+              href="https://aimeelinks.vercel.app/"
+              style={[styles.footerSubtext, { textDecorationLine: 'underline' }]}
+            >
+              Aimée Pineda
+            </Link>
+          </Text>
         </View>
       </ScrollView>
 
