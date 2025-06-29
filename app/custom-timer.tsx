@@ -90,11 +90,34 @@ export default function CustomTimerScreen() {
     return currentTimer?.color || '#FF6B35';
   };
 
-  const handleTimerComplete = async () => {
-    triggerHaptic();
-    await playSound('pip');
-    nextCycle();
-  };
+const handleTimerComplete = async () => {
+  triggerHaptic();
+  
+  if (!currentTimer?.sequence) return;
+  
+  const nextCycle = timerState.currentCycle + 1;
+  
+  if (nextCycle <= currentTimer.sequence.length) {
+    // Avanza al siguiente segmento
+    await playSound('pip'); // Sonido normal entre segmentos
+    const nextSegment = currentTimer.sequence[nextCycle - 1];
+    setTimerState({
+      isRunning: true,
+      timeLeft: nextSegment.duration,
+      isBreak: nextSegment.isBreak,
+      currentCycle: nextCycle,
+      totalCycles: currentTimer.sequence.length,
+    });
+  } else {
+    // Fin de toda la secuencia
+    await playSound('complete'); // Sonido especial de finalización
+    setTimerState(prev => ({
+      ...prev,
+      isRunning: false,
+      timeLeft: 0,
+    }));
+  }
+};
 
   const handlePlayPause = async () => {
     triggerHaptic();
@@ -146,7 +169,24 @@ export default function CustomTimerScreen() {
 
   const handleSkip = () => {
     triggerHaptic();
-    nextCycle();
+    if (!currentTimer?.sequence) return;
+    const nextCycle = timerState.currentCycle + 1;
+    if (nextCycle <= currentTimer.sequence.length) {
+      const nextSegment = currentTimer.sequence[nextCycle - 1];
+      setTimerState({
+        isRunning: true,
+        timeLeft: nextSegment.duration,
+        isBreak: nextSegment.isBreak,
+        currentCycle: nextCycle,
+        totalCycles: currentTimer.sequence.length,
+      });
+    } else {
+      setTimerState(prev => ({
+        ...prev,
+        isRunning: false,
+        timeLeft: 0,
+      }));
+    }
   };
 
   const formatTime = (seconds: number): string => {
