@@ -1011,7 +1011,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 2,
+
   },
   timeTextInput: {
     flex: 1,
