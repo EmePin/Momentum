@@ -217,10 +217,13 @@ export default function SettingsScreen() {
               Aimée Pineda
             </Link>
           </Text>
+          <View style={styles.footer2}>
            <BoltBadge />
+           </View>
         </View>
+        
       </ScrollView>
-
+      
       
     </LinearGradient>
   );
@@ -326,6 +329,10 @@ const styles = StyleSheet.create({
   footer: {
     alignItems: 'center',
     paddingBottom: 40,
+  },
+    footer2: {
+    alignItems: 'center',
+
   },
   footerText: {
     fontSize: 14,

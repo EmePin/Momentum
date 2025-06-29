@@ -17,10 +17,6 @@ const BoltBadge: React.FC = () => {
     <View style={styles.wrapper}>
       <Pressable
         onPress={handlePress}
-        style={({ pressed }) => [
-          styles.badge,
-          pressed && styles.pressedShadow,
-        ]}
       >
         <Image
           source={{
@@ -37,11 +33,8 @@ const BoltBadge: React.FC = () => {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: -25,
-    left: 0,
-    right: 0,
     alignItems: 'center',
-    zIndex: 9999,
+    padding: 30,
   },
   image: {
     height: Platform.OS === 'web' ? 40 : 32, // como en @media min-width 768px
