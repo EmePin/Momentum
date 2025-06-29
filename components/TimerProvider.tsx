@@ -10,6 +10,7 @@ interface TimerContextType {
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
   playSound: (soundType: 'pip' | 'pipi' | 'complete') => void;
+  stopAllSounds: () => void; // NUEVO
   nextCycle: () => void;
 }
 
@@ -83,6 +84,16 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
   const pipiPlayer = useAudioPlayer({ uri: 'https://actions.google.com/sounds/v1/alarms/bugle_tune.ogg' });
   const completePlayer = useAudioPlayer({ uri: 'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg' });
 
+  // NUEVO: función para detener todos los sonidos
+  const stopAllSounds = () => {
+    if (pipPlayer.pause) pipPlayer.pause();
+    if (pipPlayer.seekTo) pipPlayer.seekTo(0);
+    if (pipiPlayer.pause) pipiPlayer.pause();
+    if (pipiPlayer.seekTo) pipiPlayer.seekTo(0);
+    if (completePlayer.pause) completePlayer.pause();
+    if (completePlayer.seekTo) completePlayer.seekTo(0);
+  };
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -153,6 +164,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
         timerState,
         setTimerState,
         playSound,
+        stopAllSounds, // NUEVO
         settings,
         updateSettings,
         nextCycle,

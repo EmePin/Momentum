@@ -24,6 +24,7 @@ export default function PomodoroScreen() {
     timerState, 
     setTimerState, 
     playSound, 
+    stopAllSounds, // NUEVO
     settings
   } = useTimer();
 
@@ -59,6 +60,7 @@ export default function PomodoroScreen() {
 
   useEffect(() => {
     if (timerState.timeLeft === 0 && timerState.isRunning) {
+      stopAllSounds(); // NUEVO: corta el audio al llegar a 0
       handleTimerComplete();
     }
   }, [timerState.timeLeft, timerState.isRunning]);
