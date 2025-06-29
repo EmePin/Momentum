@@ -27,6 +27,8 @@ import { useTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Link } from 'expo-router';
+import BoltBadge from '../../components/BoltBadge'; // Ajusta la ruta
+
 
 export default function SettingsScreen() {
   const { settings, updateSettings } = useTimer();
@@ -215,6 +217,7 @@ export default function SettingsScreen() {
               Aimée Pineda
             </Link>
           </Text>
+           <BoltBadge />
         </View>
       </ScrollView>
 
