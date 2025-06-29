@@ -15,9 +15,190 @@ import { useTimer } from '@/components/TimerProvider';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
-const { width } = Dimensions.get('window');
 
+const { width, height } = Dimensions.get('window');
+const isLargeScreen = width > 900;
 export default function CustomTimerScreen() {
+   const isWeb = Platform.OS === 'web';
+  
+    const styles = StyleSheet.create({
+      container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: isLargeScreen ? 'flex-start' : 'space-between',
+        paddingHorizontal: 20,
+        paddingTop: isLargeScreen ? height * 0.07 : 60,
+        paddingBottom: isLargeScreen ? height * 0.04 : 120,
+        backgroundColor: 'transparent',
+      },
+      backButton: {
+        position: 'absolute',
+        top: isLargeScreen ? height * 0.07 : 60,
+        left: 20,
+        zIndex: 10,
+        width: isLargeScreen ? 44 : 40,
+        height: isLargeScreen ? 44 : 40,
+        borderRadius: isLargeScreen ? 22 : 20,
+        backgroundColor: isLargeScreen ? 'rgba(255, 255, 255, 0.13)' : 'rgba(255, 255, 255, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: isLargeScreen ? 2 : 0,
+        shadowColor: isLargeScreen ? '#000' : undefined,
+        shadowOpacity: isLargeScreen ? 0.1 : undefined,
+        shadowRadius: isLargeScreen ? 4 : undefined,
+        shadowOffset: isLargeScreen ? { width: 0, height: 2 } : undefined,
+      },
+      header: {
+        alignItems: 'center',
+        marginBottom: isLargeScreen ? 24 : 20,
+        marginTop: isLargeScreen ? height * 0.08 : 40,
+        width: '100%',
+        ...(isLargeScreen && { gap: 8 }),
+      },
+      title: {
+        fontSize: 32,
+        fontFamily: 'Inter-Bold',
+        color: '#FFFFFF',
+        marginBottom: isLargeScreen ? 4 : 8,
+        textAlign: 'center',
+      },
+      subtitle: {
+        fontSize: 18,
+        fontFamily: 'Inter-Regular',
+        color: '#CBD5E1',
+        textAlign: 'center',
+      },
+      timerInfo: {
+        marginTop: isLargeScreen ? 10 : 8,
+        paddingHorizontal: isLargeScreen ? 18 : 16,
+        paddingVertical: isLargeScreen ? 8 : 6,
+        backgroundColor: isLargeScreen ? 'rgba(255, 255, 255, 0.13)' : 'rgba(255, 255, 255, 0.1)',
+        borderRadius: isLargeScreen ? 14 : 12,
+        alignSelf: 'center',
+      },
+      timerInfoText: {
+        fontSize: isLargeScreen ? 15 : 14,
+        fontFamily: 'Inter-Regular',
+        color: '#CBD5E1',
+        textAlign: 'center',
+      },
+      timerContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
+        width: '100%',
+        marginVertical: isLargeScreen ? 10 : 0,
+      },
+      progressRing: {
+        width: isLargeScreen ? width * 0.75 : width * 0.8,
+        height: isLargeScreen ? width * 0.75 : width * 0.8,
+        borderRadius: isLargeScreen ? (width * 0.75) / 2 : width * 0.4,
+        backgroundColor: isLargeScreen ? 'rgba(255, 255, 255, 0.09)' : 'rgba(255, 255, 255, 0.1)',
+        borderWidth: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        marginBottom: isLargeScreen ? 10 : 0,
+      },
+      progressBar: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        borderRadius: isLargeScreen ? (width * 0.75) / 2 : width * 0.4,
+        opacity: 0.2,
+      },
+      timerInner: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: isLargeScreen ? 10 : 0,
+        width: '100%',
+      },
+      timerText: {
+        fontSize: 48,
+        fontFamily: 'Inter-Bold',
+        marginBottom: isLargeScreen ? 6 : 8,
+        textAlign: 'center',
+      },
+      phaseText: {
+        fontSize: isLargeScreen ? 17 : 16,
+        fontFamily: 'Inter-SemiBold',
+        color: '#94A3B8',
+        textAlign: 'center',
+      },
+      controls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: isLargeScreen ? '90%' : '100%',
+        alignSelf: 'center',
+        paddingHorizontal: isLargeScreen ? 20 : 40,
+        marginBottom: isLargeScreen ? 30 : 40,
+        marginTop: isLargeScreen ? 10 : 0,
+        ...(isLargeScreen && { gap: 24 }),
+      },
+      playButton: {
+        marginTop: 0,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      playButtonGradient: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      secondaryButton: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: isLargeScreen ? 'rgba(255, 255, 255, 0.13)' : 'rgba(255, 255, 255, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: isLargeScreen ? 2 : 0,
+      },
+      stats: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+        backgroundColor: isLargeScreen ? 'rgba(255, 255, 255, 0.09)' : 'rgba(255, 255, 255, 0.1)',
+        borderRadius: isLargeScreen ? 18 : 16,
+        paddingVertical: isLargeScreen ? 18 : 20,
+        paddingHorizontal: isLargeScreen ? 10 : 20,
+        marginTop: isLargeScreen ? 10 : 0,
+        marginBottom: 0,
+        ...(isLargeScreen && { gap: 10 }),
+      },
+      statItem: {
+        alignItems: 'center',
+        minWidth: isLargeScreen ? 70 : undefined,
+        ...(isLargeScreen && { gap: 2 }),
+      },
+      statValue: {
+        fontSize: 24,
+        fontFamily: 'Inter-Bold',
+        color: '#FFFFFF',
+        marginBottom: isLargeScreen ? 2 : 4,
+        textAlign: 'center',
+      },
+      statLabel: {
+        fontSize: 14,
+        fontFamily: 'Inter-Regular',
+        color: '#94A3B8',
+        textAlign: 'center',
+      },
+    });
+  
   const router = useRouter();
   const { 
     currentTimer, 
@@ -402,6 +583,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   playButton: {
+    marginTop:30,
     width: 80,
     height: 80,
     borderRadius: 40,
